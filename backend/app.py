@@ -193,7 +193,8 @@ async def analyze_sentiment(text_input: TextInput):
             raise HTTPException(status_code=400, detail="Text cannot be empty")
         
         # Check if model is available
-        if text_input.model_name not in AVAILABLE_MODELS:
+        model_name = text_input.model_name
+        if model_name not in AVAILABLE_MODELS:
             raise HTTPException(status_code=400, detail=f"Model {text_input.model_name} not available")
         
         # Call Hugging Face Inference API
@@ -201,38 +202,56 @@ async def analyze_sentiment(text_input: TextInput):
         payload = {"inputs": text_input.text}
         
         response = requests.post(
-            f"{HF_API_BASE}/{AVAILABLE_MODELS[text_input.model_name]}",
+            f"{HF_API_BASE}/{AVAILABLE_MODELS[model_name]}",
             headers=headers,
             json=payload,
-            timeout=30
+            timeout=60
         )
         
+        if response.status_code == 401:
+            raise HTTPException(status_code=500, detail="HF API error: Unauthorized. Ensure HF_API_TOKEN is set in Render env vars.")
+        if response.status_code == 404:
+            raise HTTPException(status_code=500, detail=f"HF API error: Not Found. Check model id '{AVAILABLE_MODELS[model_name]}'")
         if response.status_code != 200:
             raise HTTPException(status_code=500, detail=f"HF API error: {response.text}")
         
         result = response.json()
         
+        # Helper to normalize HF API outputs (list or list-of-list)
+        def extract_label_score(hf_result: Any) -> Dict[str, Any]:
+            try:
+                item = hf_result[0]
+                if isinstance(item, list):
+                    item = item[0]
+                return {"label": item.get("label"), "score": item.get("score")}
+            except Exception:
+                return {"label": None, "score": None}
+
         # Process results based on model type
         if model_name == "distilbert-base-uncased-finetuned-sst-2-english":
-            # Binary classification: POSITIVE/NEGATIVE
-            sentiment = result[0]['label']
-            confidence = result[0]['score']
-            
+            ls = extract_label_score(result)
+            sentiment = (ls["label"] or "NEUTRAL").upper()
+            confidence = float(ls["score"] or 0.5)
             if sentiment == 'POSITIVE':
                 positive_score = confidence
                 negative_score = 1 - confidence
                 neutral_score = 0.0
-            else:
+            elif sentiment == 'NEGATIVE':
                 positive_score = 1 - confidence
                 negative_score = confidence
                 neutral_score = 0.0
-                
+            else:
+                positive_score = 0.0
+                negative_score = 0.0
+                neutral_score = confidence
+
         elif model_name == "cardiffnlp/twitter-roberta-base-sentiment-latest":
-            # Three-class classification: POSITIVE/NEGATIVE/NEUTRAL
-            sentiment = result[0]['label']
-            confidence = result[0]['score']
-            
-            # For simplicity, we'll set the main score and others to 0
+            ls = extract_label_score(result)
+            label = (ls["label"] or "NEUTRAL").upper()
+            confidence = float(ls["score"] or 0.5)
+            # Map LABEL_* to human labels
+            mapping = {"LABEL_0": "NEGATIVE", "LABEL_1": "NEUTRAL", "LABEL_2": "POSITIVE"}
+            sentiment = mapping.get(label, label)
             if sentiment == 'POSITIVE':
                 positive_score = confidence
                 negative_score = 0.0
@@ -245,73 +264,72 @@ async def analyze_sentiment(text_input: TextInput):
                 positive_score = 0.0
                 negative_score = 0.0
                 neutral_score = confidence
-                
+
         elif model_name == "nlptown/bert-base-multilingual-uncased-sentiment":
-            # 5-star rating system
-            rating = float(result[0]['label'].split()[0])
-            confidence = result[0]['score']
-            
-            # Convert 5-star rating to sentiment
+            ls = extract_label_score(result)
+            label_text = (ls["label"] or "3 stars").lower()
+            confidence = float(ls["score"] or 0.5)
+            # Labels like "1 star", "2 stars", ...
+            try:
+                rating = float(label_text.split()[0])
+            except Exception:
+                rating = 3.0
             if rating >= 4:
                 sentiment = "POSITIVE"
+                positive_score = confidence
+                negative_score = 0.0
+                neutral_score = 0.0
             elif rating <= 2:
                 sentiment = "NEGATIVE"
-            else:
-                sentiment = "NEUTRAL"
-            
-            # Normalize scores for consistency
-            if sentiment == "POSITIVE":
-                positive_score = confidence
-                negative_score = 0.0
-                neutral_score = 0.0
-            elif sentiment == "NEGATIVE":
                 positive_score = 0.0
                 negative_score = confidence
                 neutral_score = 0.0
             else:
+                sentiment = "NEUTRAL"
                 positive_score = 0.0
                 negative_score = 0.0
                 neutral_score = confidence
-                
+
         elif model_name == "finiteautomata/bertweet-base-sentiment-analysis":
-            # BERTweet sentiment analysis
-            sentiment = result[0]['label'].upper()
-            confidence = result[0]['score']
-            
-            if sentiment == 'POS':
-                positive_score = confidence
-                negative_score = 0.0
-                neutral_score = 0.0
+            ls = extract_label_score(result)
+            raw = (ls["label"] or "NEU").upper()
+            confidence = float(ls["score"] or 0.5)
+            if raw == 'POS':
                 sentiment = "POSITIVE"
-            elif sentiment == 'NEG':
-                positive_score = 0.0
-                negative_score = confidence
-                neutral_score = 0.0
-                sentiment = "NEGATIVE"
-            else:
-                positive_score = 0.0
-                negative_score = 0.0
-                neutral_score = confidence
-                sentiment = "NEUTRAL"
-                
-        elif model_name == "ProsusAI/finbert":
-            # FinBERT financial sentiment
-            sentiment = result[0]['label'].upper()
-            confidence = result[0]['score']
-            
-            if sentiment == 'POSITIVE':
                 positive_score = confidence
                 negative_score = 0.0
                 neutral_score = 0.0
-            elif sentiment == 'NEGATIVE':
+            elif raw == 'NEG':
+                sentiment = "NEGATIVE"
                 positive_score = 0.0
                 negative_score = confidence
                 neutral_score = 0.0
             else:
+                sentiment = "NEUTRAL"
                 positive_score = 0.0
                 negative_score = 0.0
                 neutral_score = confidence
-                
+
+        elif model_name == "ProsusAI/finbert":
+            ls = extract_label_score(result)
+            label = (ls["label"] or "neutral").upper()
+            confidence = float(ls["score"] or 0.5)
+            if label == 'POSITIVE':
+                sentiment = 'POSITIVE'
+                positive_score = confidence
+                negative_score = 0.0
+                neutral_score = 0.0
+            elif label == 'NEGATIVE':
+                sentiment = 'NEGATIVE'
+                positive_score = 0.0
+                negative_score = confidence
+                neutral_score = 0.0
+            else:
+                sentiment = 'NEUTRAL'
+                positive_score = 0.0
+                negative_score = 0.0
+                neutral_score = confidence
+
         elif model_name == "microsoft/DialoGPT-medium":
             # DialoGPT - use as neutral since it's text generation
             sentiment = "NEUTRAL"
