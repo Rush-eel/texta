@@ -43,7 +43,13 @@ HF_API_BASE = "https://api-inference.huggingface.co/models"
 # Available models for HF Inference API
 AVAILABLE_MODELS = {
     "ProsusAI/finbert": "ProsusAI/finbert",
-    "facebook/bart-large-mnli": "facebook/bart-large-mnli"
+    "facebook/bart-large-mnli": "facebook/bart-large-mnli",
+    "finiteautomata/bertweet-base-sentiment-analysis": "finiteautomata/bertweet-base-sentiment-analysis",
+    "nlptown/bert-base-multilingual-uncased-sentiment": "nlptown/bert-base-multilingual-uncased-sentiment",
+    "ahmedrachid/FinancialBERT-Sentiment-Analysis": "ahmedrachid/FinancialBERT-Sentiment-Analysis",
+    "tabularisai/multilingual-sentiment-analysis": "tabularisai/multilingual-sentiment-analysis",
+    "yangheng/deberta-v3-base-absa-v1.1": "yangheng/deberta-v3-base-absa-v1.1",
+    "yangheng/deberta-v3-large-absa-v1.1": "yangheng/deberta-v3-large-absa-v1.1"
 }
 
 class TextInput(BaseModel):
@@ -295,6 +301,136 @@ async def analyze_sentiment(text_input: TextInput):
                 positive_score = 0.33
                 negative_score = 0.33
                 neutral_score = 0.34
+
+        elif model_name == "finiteautomata/bertweet-base-sentiment-analysis":
+            # BERTweet returns [{"label": "POS", "score": 0.99}, ...]
+            ls = extract_label_score(result)
+            raw = (ls["label"] or "NEU").upper()
+            confidence = float(ls["score"] or 0.5)
+            if raw == 'POS':
+                sentiment = "POSITIVE"
+                positive_score = confidence
+                negative_score = 0.0
+                neutral_score = 0.0
+            elif raw == 'NEG':
+                sentiment = "NEGATIVE"
+                positive_score = 0.0
+                negative_score = confidence
+                neutral_score = 0.0
+            else:
+                sentiment = "NEUTRAL"
+                positive_score = 0.0
+                negative_score = 0.0
+                neutral_score = confidence
+
+        elif model_name == "nlptown/bert-base-multilingual-uncased-sentiment":
+            # 5-star rating system
+            ls = extract_label_score(result)
+            label_text = (ls["label"] or "3 stars").lower()
+            confidence = float(ls["score"] or 0.5)
+            try:
+                rating = float(label_text.split()[0])
+            except Exception:
+                rating = 3.0
+            if rating >= 4:
+                sentiment = "POSITIVE"
+                positive_score = confidence
+                negative_score = 0.0
+                neutral_score = 0.0
+            elif rating <= 2:
+                sentiment = "NEGATIVE"
+                positive_score = 0.0
+                negative_score = confidence
+                neutral_score = 0.0
+            else:
+                sentiment = "NEUTRAL"
+                positive_score = 0.0
+                negative_score = 0.0
+                neutral_score = confidence
+
+        elif model_name == "ahmedrachid/FinancialBERT-Sentiment-Analysis":
+            # FinancialBERT returns [{"label": "neutral", "score": 0.99}, ...]
+            ls = extract_label_score(result)
+            label = (ls["label"] or "neutral").upper()
+            confidence = float(ls["score"] or 0.5)
+            if label == 'POSITIVE':
+                sentiment = 'POSITIVE'
+                positive_score = confidence
+                negative_score = 0.0
+                neutral_score = 0.0
+            elif label == 'NEGATIVE':
+                sentiment = 'NEGATIVE'
+                positive_score = 0.0
+                negative_score = confidence
+                neutral_score = 0.0
+            else:
+                sentiment = 'NEUTRAL'
+                positive_score = 0.0
+                negative_score = 0.0
+                neutral_score = confidence
+
+        elif model_name == "tabularisai/multilingual-sentiment-analysis":
+            # Multilingual sentiment returns [{"label": "Very Positive", "score": 0.49}, ...]
+            ls = extract_label_score(result)
+            label = (ls["label"] or "Neutral").upper()
+            confidence = float(ls["score"] or 0.5)
+            if 'POSITIVE' in label:
+                sentiment = 'POSITIVE'
+                positive_score = confidence
+                negative_score = 0.0
+                neutral_score = 0.0
+            elif 'NEGATIVE' in label:
+                sentiment = 'NEGATIVE'
+                positive_score = 0.0
+                negative_score = confidence
+                neutral_score = 0.0
+            else:
+                sentiment = 'NEUTRAL'
+                positive_score = 0.0
+                negative_score = 0.0
+                neutral_score = confidence
+
+        elif model_name == "yangheng/deberta-v3-base-absa-v1.1":
+            # DeBERTa v3 base returns [{"label": "Positive", "score": 0.98}, ...]
+            ls = extract_label_score(result)
+            label = (ls["label"] or "Neutral").upper()
+            confidence = float(ls["score"] or 0.5)
+            if label == 'POSITIVE':
+                sentiment = 'POSITIVE'
+                positive_score = confidence
+                negative_score = 0.0
+                neutral_score = 0.0
+            elif label == 'NEGATIVE':
+                sentiment = 'NEGATIVE'
+                positive_score = 0.0
+                negative_score = confidence
+                neutral_score = 0.0
+            else:
+                sentiment = 'NEUTRAL'
+                positive_score = 0.0
+                negative_score = 0.0
+                neutral_score = confidence
+
+        elif model_name == "yangheng/deberta-v3-large-absa-v1.1":
+            # DeBERTa v3 large returns [{"label": "Positive", "score": 0.99}, ...]
+            ls = extract_label_score(result)
+            label = (ls["label"] or "Neutral").upper()
+            confidence = float(ls["score"] or 0.5)
+            if label == 'POSITIVE':
+                sentiment = 'POSITIVE'
+                positive_score = confidence
+                negative_score = 0.0
+                neutral_score = 0.0
+            elif label == 'NEGATIVE':
+                sentiment = 'NEGATIVE'
+                positive_score = 0.0
+                negative_score = confidence
+                neutral_score = 0.0
+            else:
+                sentiment = 'NEUTRAL'
+                positive_score = 0.0
+                negative_score = 0.0
+                neutral_score = confidence
 
         else:
             # Default fallback
