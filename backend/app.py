@@ -27,6 +27,7 @@ app.add_middleware(
         "http://localhost:3000",
         "https://*.netlify.app",
         "https://*.netlify.com",
+        "https://textaanalyzer.netlify.app",  # Specific domain
         "https://*.amazonaws.com",
         "https://*.cloudfront.net"
     ],
