@@ -6,6 +6,7 @@ import uvicorn
 from typing import List, Dict, Any
 import logging
 import re
+import startup
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -144,6 +145,9 @@ async def test_endpoint():
 async def startup_event():
     """Initialize models on startup - Memory optimized version"""
     logger.info("Initializing sentiment analysis models...")
+    
+    # Run memory optimization first
+    startup.optimize_memory()
     
     # Only load the essential model to save memory
     try:
