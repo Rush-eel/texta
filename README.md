@@ -1,10 +1,11 @@
 # Texta - Sentiment Analysis with Hugging Face Models
 
-A modern, elegant sentiment analysis application built with React, FastAPI, and Hugging Face Transformers.
+🌐 **Live Demo: [https://textaanalyzer.netlify.app/](https://textaanalyzer.netlify.app/)**
+
+A modern, elegant sentiment analysis application built with React, FastAPI, and Hugging Face Inference API. Analyze text sentiment using 8 different AI models with real-time results and beautiful visualizations.
 
 ## Features
-
-- **Multiple AI Models**: Support for DistilBERT, RoBERTa Twitter, and BERT Multilingual
+- **8 AI Models**: Support for 8 different Hugging Face sentiment analysis models
 - **Real-time Analysis**: Instant sentiment analysis with confidence scores
 - **File Upload**: Support for text files (.txt, .doc, .docx, .pdf)
 - **Model Comparison**: Easy switching between different Hugging Face models
@@ -20,9 +21,15 @@ A modern, elegant sentiment analysis application built with React, FastAPI, and 
 
 ### Backend
 - **FastAPI** - Modern Python web framework
-- **Transformers** - Hugging Face library for NLP models
-- **PyTorch** - Deep learning framework
-- **Uvicorn** - ASGI server
+- **Hugging Face Inference API** - Cloud-based model inference
+- **Requests** - HTTP client for API calls
+- **Gunicorn** - Production WSGI server
+
+## Deployment
+
+### Backend & Frontend Deployment
+- **Render**: Easy deployment with Python support
+- **Netlify**: Simple static site hosting
 
 ## Setup Instructions
 
@@ -51,7 +58,7 @@ A modern, elegant sentiment analysis application built with React, FastAPI, and 
 
 4. **Start the FastAPI server**
    ```bash
-   python main.py
+   python app.py
    ```
 
    The backend will be available at `http://localhost:8000`
@@ -84,17 +91,56 @@ A modern, elegant sentiment analysis application built with React, FastAPI, and 
 
 ## Available Models
 
-1. **DistilBERT** (`distilbert-base-uncased-finetuned-sst-2-english`)
-   - Binary classification: Positive/Negative
-   - Fast and efficient
+### 🏦 Financial & Business Models
+1. **ProsusAI/finbert** - Financial sentiment analysis
+   - Specialized for business and financial text
+   - Three-class: Positive/Negative/Neutral
+   - High accuracy on financial documents
 
-2. **RoBERTa Twitter** (`cardiffnlp/twitter-roberta-base-sentiment-latest`)
-   - Three-class classification: Positive/Negative/Neutral
-   - Optimized for social media text
+2. **ahmedrachid/FinancialBERT-Sentiment-Analysis** - Financial sentiment
+   - Optimized for financial news and reports
+   - Three-class classification with confidence scores
 
-3. **BERT Multilingual** (`nlptown/bert-base-multilingual-uncased-sentiment`)
-   - 5-star rating system
+### 🌍 Multilingual & General Models
+3. **tabularisai/multilingual-sentiment-analysis** - Multilingual sentiment
+   - Supports multiple languages
+   - Four-class: Very Positive/Positive/Neutral/Negative
+   - Great for international content
+
+4. **nlptown/bert-base-multilingual-uncased-sentiment** - 5-star rating system
+   - Converts text to 1-5 star ratings
    - Multilingual support
+   - Perfect for review analysis
+
+### 🐦 Social Media & Twitter Models
+5. **finiteautomata/bertweet-base-sentiment-analysis** - Twitter sentiment
+   - Optimized for social media text
+   - Three-class: POS/NEG/NEU
+   - Handles informal language well
+
+### 🚀 Advanced AI Models
+6. **facebook/bart-large-mnli** - Zero-shot classification
+   - Can classify any text without training
+   - Flexible sentiment analysis
+   - High accuracy on diverse content
+
+7. **yangheng/deberta-v3-base-absa-v1.1** - DeBERTa v3 base
+   - State-of-the-art performance
+   - Three-class: Positive/Negative/Neutral
+   - Excellent for general sentiment analysis
+
+8. **yangheng/deberta-v3-large-absa-v1.1** - DeBERTa v3 large
+   - Highest accuracy model
+   - Three-class classification
+   - Best for critical applications
+
+### 🔧 Model Selection Guide
+- **For financial text**: Use FinBERT or FinancialBERT
+- **For social media**: Use BERTweet
+- **For multilingual content**: Use tabularisai multilingual
+- **For highest accuracy**: Use DeBERTa v3 large
+- **For flexibility**: Use BART MNLI (zero-shot)
+- **For reviews**: Use nlptown 5-star rating
 
 ## Usage
 
@@ -111,79 +157,8 @@ A modern, elegant sentiment analysis application built with React, FastAPI, and 
 - **Word documents** (.doc, .docx) - Text extraction
 - **PDF files** (.pdf) - Text extraction
 
-## Color Coding
 
-- **Green** 🟢 - Positive sentiment
-- **Red** 🔴 - Negative sentiment  
-- **Grey** ⚫ - Neutral sentiment
 
-## Development
 
-### Project Structure
-```
-texta/
-├── backend/
-│   ├── main.py              # FastAPI application
-│   └── requirements.txt     # Python dependencies
-├── src/
-│   ├── services/
-│   │   ├── apiService.js    # API communication
-│   │   └── textAnalysisService.js  # Legacy service
-│   ├── App.jsx              # Main React component
-│   └── index.css            # Tailwind CSS
-├── package.json             # Node.js dependencies
-└── README.md               # This file
-```
 
-### Adding New Models
 
-1. **Update backend/main.py** - Add model initialization
-2. **Update frontend** - Add model selection option
-3. **Test integration** - Verify model works correctly
-
-## Deployment
-
-### Backend Deployment
-- **Render**: Easy deployment with Python support
-- **Railway**: Simple container deployment
-- **Heroku**: Traditional Python hosting
-
-### Frontend Deployment
-- **Vercel**: Optimized for React apps
-- **Netlify**: Simple static site hosting
-- **GitHub Pages**: Free hosting for open source
-
-## Troubleshooting
-
-### Backend Issues
-- **Model loading fails**: Check internet connection and model availability
-- **Memory errors**: Reduce batch size or use smaller models
-- **CORS errors**: Verify frontend URLs in CORS configuration
-
-### Frontend Issues
-- **Connection failed**: Ensure backend is running on port 8000
-- **Models not loading**: Check backend health endpoint
-- **Analysis errors**: Verify text input and model selection
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## License
-
-MIT License - see LICENSE file for details
-
-## Support
-
-For issues and questions:
-- Create a GitHub issue
-- Check the troubleshooting section
-- Review FastAPI and Transformers documentation
-
----
-
-**Built with ❤️ using modern web technologies and AI models**

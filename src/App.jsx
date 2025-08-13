@@ -339,7 +339,7 @@ export default function TextAnalyzer() {
               </span>
             </div>
           </div>
-        </div>
+      </div>
       </header>
 
       <section className="relative py-16">
@@ -352,8 +352,8 @@ export default function TextAnalyzer() {
           </h1>
           <p className="text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed font-light">
             Discover insights through sophisticated text analysis using state-of-the-art transformer models.
-          </p>
-        </div>
+        </p>
+      </div>
       </section>
 
       <main className="max-w-7xl mx-auto px-6 pb-20">
