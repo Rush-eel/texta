@@ -30,7 +30,7 @@ class ApiService {
   }
 
   // Analyze single text
-  async analyzeSentiment(text, modelName = 'distilbert-base-uncased-finetuned-sst-2-english') {
+  async analyzeSentiment(text, modelName = 'ProsusAI/finbert') {
     try {
       const response = await fetch(`${this.baseURL}/analyze`, {
         method: 'POST',
