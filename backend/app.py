@@ -43,8 +43,7 @@ HF_API_BASE = "https://api-inference.huggingface.co/models"
 # Available models for HF Inference API
 AVAILABLE_MODELS = {
     "ProsusAI/finbert": "ProsusAI/finbert",
-    "facebook/bart-large-mnli": "facebook/bart-large-mnli",
-    "microsoft/DialoGPT-medium": "microsoft/DialoGPT-medium"
+    "facebook/bart-large-mnli": "facebook/bart-large-mnli"
 }
 
 class TextInput(BaseModel):
@@ -197,7 +196,17 @@ async def analyze_sentiment(text_input: TextInput):
         
         # Call Hugging Face Inference API
         headers = {"Authorization": f"Bearer {HF_API_TOKEN}"} if HF_API_TOKEN else {}
-        payload = {"inputs": text_input.text}
+        
+        # Special handling for BART MNLI (zero-shot classification)
+        if model_name == "facebook/bart-large-mnli":
+            payload = {
+                "inputs": text_input.text,
+                "parameters": {
+                    "candidate_labels": ["positive", "negative", "neutral"]
+                }
+            }
+        else:
+            payload = {"inputs": text_input.text}
         
         response = requests.post(
             f"{HF_API_BASE}/{AVAILABLE_MODELS[model_name]}",
@@ -286,14 +295,6 @@ async def analyze_sentiment(text_input: TextInput):
                 positive_score = 0.33
                 negative_score = 0.33
                 neutral_score = 0.34
-
-        elif model_name == "microsoft/DialoGPT-medium":
-            # DialoGPT - use as neutral since it's text generation
-            sentiment = "NEUTRAL"
-            confidence = 0.5
-            positive_score = 0.33
-            negative_score = 0.33
-            neutral_score = 0.34
 
         else:
             # Default fallback

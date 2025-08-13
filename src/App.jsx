@@ -5,7 +5,7 @@ export default function TextAnalyzer() {
   const [text, setText] = useState('');
   const [analysis, setAnalysis] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('distilbert-base-uncased-finetuned-sst-2-english');
+  const [selectedModel, setSelectedModel] = useState('ProsusAI/finbert');
   const [availableModels, setAvailableModels] = useState([]);
   const [backendStatus, setBackendStatus] = useState('checking');
   const [fileContent, setFileContent] = useState('');
