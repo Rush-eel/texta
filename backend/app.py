@@ -362,20 +362,33 @@ async def analyze_batch_sentiment(batch_input: BatchTextInput):
         if len(batch_input.texts) > 100:  # Limit batch size
             raise HTTPException(status_code=400, detail="Batch size cannot exceed 100 texts")
         
-        # Get the model
+        # Check if model is available
         model_name = batch_input.model_name
-        if model_name not in models:
+        if model_name not in AVAILABLE_MODELS:
             raise HTTPException(status_code=400, detail=f"Model {model_name} not available")
         
-        model = models[model_name]
         results = []
         
         for text in batch_input.texts:
             if not text.strip():
                 continue
                 
-            # Analyze each text
-            result = model(text)
+            # Analyze each text using Hugging Face Inference API
+            headers = {"Authorization": f"Bearer {HF_API_TOKEN}"} if HF_API_TOKEN else {}
+            payload = {"inputs": text}
+            
+            response = requests.post(
+                f"{HF_API_BASE}/{AVAILABLE_MODELS[model_name]}",
+                headers=headers,
+                json=payload,
+                timeout=30
+            )
+            
+            if response.status_code != 200:
+                logger.error(f"HF API error for text '{text[:50]}...': {response.text}")
+                continue
+                
+            result = response.json()
             
             # Process results (similar logic as single analysis)
             sentiment = result[0]['label']
@@ -427,8 +440,9 @@ async def health_check():
     """Health check endpoint"""
     return {
         "status": "healthy",
-        "models_loaded": len(models),
-        "available_models": list(models.keys())
+        "models_loaded": len(AVAILABLE_MODELS),
+        "available_models": list(AVAILABLE_MODELS.keys()),
+        "api_type": "Hugging Face Inference API"
     }
 
 if __name__ == "__main__":
