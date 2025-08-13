@@ -6,7 +6,6 @@ import uvicorn
 from typing import List, Dict, Any
 import logging
 import re
-import startup
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -22,7 +21,9 @@ app.add_middleware(
         "http://localhost:5174", 
         "http://localhost:3000",
         "https://*.netlify.app",
-        "https://*.netlify.com"
+        "https://*.netlify.com",
+        "https://*.amazonaws.com",
+        "https://*.cloudfront.net"
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -143,34 +144,65 @@ async def test_endpoint():
 
 @app.on_event("startup")
 async def startup_event():
-    """Initialize models on startup - Memory optimized version"""
+    """Initialize models on startup"""
     logger.info("Initializing sentiment analysis models...")
     
-    # Run memory optimization first
-    startup.optimize_memory()
-    
-    # Only load the essential model to save memory
+    # Initialize default model
     try:
         models["distilbert-base-uncased-finetuned-sst-2-english"] = pipeline(
             "sentiment-analysis",
-            model="distilbert-base-uncased-finetuned-sst-2-english",
-            device=-1  # Force CPU usage
+            model="distilbert-base-uncased-finetuned-sst-2-english"
         )
-        logger.info("DistilBERT model loaded successfully (CPU mode)")
+        logger.info("DistilBERT model loaded successfully")
     except Exception as e:
         logger.error(f"Failed to load DistilBERT model: {e}")
     
-    # Load one additional model if memory allows
+    # Initialize additional models
     try:
         models["cardiffnlp/twitter-roberta-base-sentiment-latest"] = pipeline(
             "sentiment-analysis",
-            model="cardiffnlp/twitter-roberta-base-sentiment-latest",
-            device=-1  # Force CPU usage
+            model="cardiffnlp/twitter-roberta-base-sentiment-latest"
         )
-        logger.info("RoBERTa Twitter model loaded successfully (CPU mode)")
+        logger.info("RoBERTa Twitter model loaded successfully")
     except Exception as e:
         logger.error(f"Failed to load RoBERTa model: {e}")
-        logger.info("Continuing with single model for memory efficiency")
+    
+    try:
+        models["nlptown/bert-base-multilingual-uncased-sentiment"] = pipeline(
+            "sentiment-analysis",
+            model="nlptown/bert-base-multilingual-uncased-sentiment"
+        )
+        logger.info("BERT Multilingual model loaded successfully")
+    except Exception as e:
+        logger.error(f"Failed to load BERT Multilingual model: {e}")
+    
+    # Add more models
+    try:
+        models["finiteautomata/bertweet-base-sentiment-analysis"] = pipeline(
+            "sentiment-analysis",
+            model="finiteautomata/bertweet-base-sentiment-analysis"
+        )
+        logger.info("BERTweet sentiment model loaded successfully")
+    except Exception as e:
+        logger.error(f"Failed to load BERTweet model: {e}")
+    
+    try:
+        models["ProsusAI/finbert"] = pipeline(
+            "sentiment-analysis",
+            model="ProsusAI/finbert"
+        )
+        logger.info("FinBERT financial sentiment model loaded successfully")
+    except Exception as e:
+        logger.error(f"Failed to load FinBERT model: {e}")
+    
+    try:
+        models["microsoft/DialoGPT-medium"] = pipeline(
+            "text-generation",
+            model="microsoft/DialoGPT-medium"
+        )
+        logger.info("DialoGPT model loaded successfully")
+    except Exception as e:
+        logger.error(f"Failed to load DialoGPT model: {e}")
     
     logger.info(f"Loaded {len(models)} models successfully")
 
@@ -184,8 +216,7 @@ async def get_available_models():
     """Get list of available models"""
     return {
         "available_models": list(models.keys()),
-        "default_model": "distilbert-base-uncased-finetuned-sst-2-english",
-        "note": "Memory-optimized deployment with essential models only"
+        "default_model": "distilbert-base-uncased-finetuned-sst-2-english"
     }
 
 @app.post("/analyze", response_model=SentimentResult)
